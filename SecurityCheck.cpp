@@ -25,7 +25,7 @@ const std::vector<std::pair<std::string, std::string>> tools = {
 };
 
 // 处理方式枚举
-enum class ActionType {
+enum ActionType {
     BLUE_SCREEN,
     FORCE_EXIT,
     MESSAGE_BOX,
@@ -33,7 +33,7 @@ enum class ActionType {
 };
 
 // 全局变量
-ActionType globalAction = ActionType::MESSAGE_BOX;
+ActionType globalAction = MESSAGE_BOX;
 std::string customMessage = "检测到调试工具正在运行！";
 ACTION_CALLBACK customCallback = nullptr;
 
@@ -47,8 +47,10 @@ BOOL IsProcessRunning(const std::string& processName) {
 
     if (Process32First(hSnapshot, &pe)) {
         do {
-            std::wstring currentProcess(pe.szExeFile);
-            std::string narrowProcess(currentProcess.begin(), currentProcess.end());
+            char currentProcess[MAX_PATH];
+            WideCharToMultiByte(CP_ACP, 0, pe.szExeFile, -1, currentProcess, MAX_PATH, NULL, NULL);
+            
+            std::string narrowProcess(currentProcess);
             std::transform(narrowProcess.begin(), narrowProcess.end(), narrowProcess.begin(), ::tolower);
 
             std::string targetName = processName;
@@ -96,7 +98,7 @@ void ShowMessageBox(const std::string& toolName) {
 }
 
 // 主要检测函数
-extern "C" __declspec(dllexport) BOOL __ccall CheckDebuggers(DETECTION_CALLBACK callback) {
+extern "C" __declspec(dllexport) BOOL CheckDebuggers(DETECTION_CALLBACK callback) {
     BOOL anyDetected = FALSE;
 
     for (const auto& tool : tools) {
@@ -112,16 +114,16 @@ extern "C" __declspec(dllexport) BOOL __ccall CheckDebuggers(DETECTION_CALLBACK 
             else {
                 // 使用全局处理方式
                 switch (globalAction) {
-                case ActionType::BLUE_SCREEN:
+                case BLUE_SCREEN:
                     CauseBlueScreen();
                     break;
-                case ActionType::FORCE_EXIT:
+                case FORCE_EXIT:
                     ForceExitProcess();
                     break;
-                case ActionType::MESSAGE_BOX:
+                case MESSAGE_BOX:
                     ShowMessageBox(tool.first);
                     break;
-                case ActionType::CUSTOM_CALLBACK:
+                case CUSTOM_CALLBACK:
                     if (customCallback) {
                         customCallback(tool.first.c_str());
                     }
@@ -135,7 +137,7 @@ extern "C" __declspec(dllexport) BOOL __ccall CheckDebuggers(DETECTION_CALLBACK 
 }
 
 // 设置处理方式
-extern "C" __declspec(dllexport) void __ccall SetAction(ActionType action, const char* message, ACTION_CALLBACK callback) {
+extern "C" __declspec(dllexport) void SetAction(ActionType action, const char* message, ACTION_CALLBACK callback) {
     globalAction = action;
     if (message) {
         customMessage = message;
@@ -144,12 +146,12 @@ extern "C" __declspec(dllexport) void __ccall SetAction(ActionType action, const
 }
 
 // 获取检测工具列表
-extern "C" __declspec(dllexport) int __ccall GetToolCount() {
+extern "C" __declspec(dllexport) int GetToolCount() {
     return static_cast<int>(tools.size());
 }
 
 // 获取工具名称
-extern "C" __declspec(dllexport) const char* __ccall GetToolName(int index) {
+extern "C" __declspec(dllexport) const char* GetToolName(int index) {
     if (index >= 0 && index < static_cast<int>(tools.size())) {
         return tools[index].first.c_str();
     }
