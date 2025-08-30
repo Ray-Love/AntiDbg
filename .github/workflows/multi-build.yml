@@ -1,0 +1,45 @@
+name: Multi-Compiler Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-matrix:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+        config: [Release, Debug]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSVC ${{ matrix.arch }}
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.arch }}
+
+    - name: Compile ${{ matrix.arch }} ${{ matrix.config }}
+      run: |
+        if "${{ matrix.config }}" == "Debug" (
+          set CL_FLAGS=/Zi /Od
+        ) else (
+          set CL_FLAGS=/O2
+        )
+        
+        if "${{ matrix.arch }}" == "x86" (
+          set OUT_NAME=SecurityCheck_x86_${{ matrix.config }}.dll
+        ) else (
+          set OUT_NAME=SecurityCheck_x64_${{ matrix.config }}.dll
+        )
+        
+        cl /LD $CL_FLAGS SecurityCheck.cpp /link /OUT:%OUT_NAME% user32.lib kernel32.lib advapi32.lib /nologo
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SecurityCheck-${{ matrix.arch }}-${{ matrix.config }}
+        path: SecurityCheck_*.dll
