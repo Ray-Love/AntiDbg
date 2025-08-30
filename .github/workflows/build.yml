@@ -1,0 +1,77 @@
+name: Build SecurityCheck DLL
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Compile with MSVC
+      run: |
+        cl /LD SecurityCheck.cpp /link /OUT:SecurityCheck.dll user32.lib kernel32.lib advapi32.lib /nologo
+
+    - name: List output files
+      run: dir *.dll
+
+    - name: Upload DLL artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SecurityCheck-DLL
+        path: SecurityCheck.dll
+
+  build-linux-test:
+    runs-on: ubuntu-latest
+    if: false  # 禁用Linux构建，仅作示例
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Mingw-w64
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++-mingw-w64-x86-64
+
+    - name: Cross-compile for Windows
+      run: |
+        x86_64-w64-mingw32-g++ -shared -o SecurityCheck.dll SecurityCheck.cpp -luser32 -lkernel32 -ladvapi32 -static
+
+  test-build:
+    runs-on: windows-latest
+    needs: build-windows
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: SecurityCheck-DLL
+
+    - name: Verify DLL exists
+      run: |
+        if not exist SecurityCheck.dll (
+          echo "DLL file not found!"
+          exit 1
+        )
+        echo "DLL file exists"
+
+    - name: Check DLL properties
+      run: |
+        dir SecurityCheck.dll
+        dumpbin /exports SecurityCheck.dll
