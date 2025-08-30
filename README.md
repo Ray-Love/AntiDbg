@@ -2,16 +2,25 @@
 
 用于检测调试器和分析工具的安全检测DLL。
 
-## GitHub Actions 状态
+## dll命令
 
-![Build Status](https://github.com/your-username/SecurityCheck/actions/workflows/build.yml/badge.svg)
+' 主要检测函数
+.DLL命令 CheckDebuggers, 逻辑型, "SecurityCheck.dll", "CheckDebuggers"
+    .参数 callback, 整数型, , , 0
+
+' 设置处理方式
+.DLL命令 SetAction, , "SecurityCheck.dll", "SetAction"
+    .参数 action, 整数型
+    .参数 message, 文本型
+    .参数 callback, 整数型, , , 0
+
+' 获取工具数量
+.DLL命令 GetToolCount, 整数型, "SecurityCheck.dll", "GetToolCount"
+
+' 获取工具名称
+.DLL命令 GetToolName, 文本型, "SecurityCheck.dll", "GetToolName"
+    .参数 index, 整数型
 
 ## 下载预编译版本
 
-前往 [Releases](https://github.com/your-username/SecurityCheck/releases) 页面下载最新版本的DLL。
-
-## 本地编译
-
-### 使用MSVC
-```bash
-cl /LD SecurityCheck.cpp /link /OUT:SecurityCheck.dll user32.lib kernel32.lib advapi32.lib
+前往 [Releases](https://github.com/Ray-Love/SecurityCheck/releases) 页面下载最新版本的DLL。
