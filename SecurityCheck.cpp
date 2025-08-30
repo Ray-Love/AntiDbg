@@ -37,30 +37,39 @@ ActionType globalAction = MESSAGE_BOX;
 std::string customMessage = "检测到调试工具正在运行！";
 ACTION_CALLBACK customCallback = nullptr;
 
+// 宽字符转多字节字符串
+std::string WStringToString(const std::wstring& wstr) {
+    if (wstr.empty()) return "";
+    
+    int size_needed = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
+    std::string str(size_needed, 0);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), (int)wstr.size(), &str[0], size_needed, NULL, NULL);
+    return str;
+}
+
 // 检测进程是否存在
 BOOL IsProcessRunning(const std::string& processName) {
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) return FALSE;
 
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(PROCESSENTRY32);
+    PROCESSENTRY32W pe;
+    pe.dwSize = sizeof(PROCESSENTRY32W);
 
-    if (Process32First(hSnapshot, &pe)) {
+    if (Process32FirstW(hSnapshot, &pe)) {
         do {
-            char currentProcess[MAX_PATH];
-            WideCharToMultiByte(CP_ACP, 0, pe.szExeFile, -1, currentProcess, MAX_PATH, NULL, NULL);
+            std::wstring currentProcessW(pe.szExeFile);
+            std::string currentProcess = WStringToString(currentProcessW);
             
-            std::string narrowProcess(currentProcess);
-            std::transform(narrowProcess.begin(), narrowProcess.end(), narrowProcess.begin(), ::tolower);
+            std::transform(currentProcess.begin(), currentProcess.end(), currentProcess.begin(), ::tolower);
 
             std::string targetName = processName;
             std::transform(targetName.begin(), targetName.end(), targetName.begin(), ::tolower);
 
-            if (narrowProcess.find(targetName) != std::string::npos) {
+            if (currentProcess.find(targetName) != std::string::npos) {
                 CloseHandle(hSnapshot);
                 return TRUE;
             }
-        } while (Process32Next(hSnapshot, &pe));
+        } while (Process32NextW(hSnapshot, &pe));
     }
 
     CloseHandle(hSnapshot);
