@@ -1,0 +1,40 @@
+name: Create Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Compile Release version
+      run: |
+        cl /LD /O2 SecurityCheck.cpp /link /OUT:SecurityCheck.dll user32.lib kernel32.lib advapi32.lib /nologo
+
+    - name: Compile Debug version
+      run: |
+        cl /LD /Zi /Od SecurityCheck.cpp /link /OUT:SecurityCheck_debug.dll user32.lib kernel32.lib advapi32.lib /nologo
+
+    - name: Create header file
+      run: |
+        copy SecurityCheck.h SecurityCheck.hpp
+
+    - name: Create release package
+      run: |
+        7z a SecurityCheck.zip SecurityCheck.dll SecurityCheck_debug.dll SecurityCheck.h SecurityCheck.hpp README.md
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: SecurityCheck.zip
+        generate_release_notes: true
