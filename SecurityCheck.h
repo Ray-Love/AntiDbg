@@ -7,17 +7,17 @@ extern "C" {
     typedef BOOL(CALLBACK* DETECTION_CALLBACK)(const char* toolName, BOOL isDetected);
     typedef void(CALLBACK* ACTION_CALLBACK)(const char* toolName);
 
-    enum class ActionType {
+    enum ActionType {
         BLUE_SCREEN,
         FORCE_EXIT,
         MESSAGE_BOX,
         CUSTOM_CALLBACK
     };
 
-    __declspec(dllexport) BOOL __cdecl CheckDebuggers(DETECTION_CALLBACK callback);
-    __declspec(dllexport) void __cdecl SetAction(ActionType action, const char* message, ACTION_CALLBACK callback);
-    __declspec(dllexport) int __cdecl GetToolCount();
-    __declspec(dllexport) const char* __cdecl GetToolName(int index);
+    __declspec(dllexport) BOOL CheckDebuggers(DETECTION_CALLBACK callback);
+    __declspec(dllexport) void SetAction(ActionType action, const char* message, ACTION_CALLBACK callback);
+    __declspec(dllexport) int GetToolCount();
+    __declspec(dllexport) const char* GetToolName(int index);
 
 #ifdef __cplusplus
 }
