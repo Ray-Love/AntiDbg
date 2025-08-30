@@ -26,12 +26,13 @@ jobs:
 
     - name: Verify DLL
       run: |
-        if not exist SecurityCheck.dll (
-          echo "编译失败：DLL文件未生成"
+        if (Test-Path SecurityCheck.dll) {
+          Write-Host "编译成功！"
+          Get-ChildItem SecurityCheck.dll
+        } else {
+          Write-Host "编译失败：DLL文件未生成"
           exit 1
-        )
-        echo "编译成功！"
-        dir SecurityCheck.dll
+        }
 
     - name: Upload DLL artifact
       uses: actions/upload-artifact@v4
